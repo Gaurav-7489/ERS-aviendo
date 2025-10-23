@@ -1,21 +1,21 @@
 import React, { useRef, useEffect, useMemo } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { Text, Sky } from "@react-three/drei";
+import { Text } from "@react-three/drei";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { gsap } from "gsap";
 import * as THREE from "three";
 
-// Floating particles
-function FloatingParticles() {
+// Floating stars in space
+function FloatingStars() {
   const ref = useRef();
-  const count = 400;
+  const count = 300;
   const positions = useMemo(() => {
     const arr = new Float32Array(count * 3);
     for (let i = 0; i < count; i++) {
-      arr[i * 3] = (Math.random() - 0.5) * 60;
-      arr[i * 3 + 1] = Math.random() * 30;
-      arr[i * 3 + 2] = (Math.random() - 0.5) * 60;
+      arr[i * 3] = (Math.random() - 0.5) * 100;
+      arr[i * 3 + 1] = Math.random() * 50 + 5;
+      arr[i * 3 + 2] = (Math.random() - 0.5) * 100;
     }
     return arr;
   }, [count]);
@@ -25,8 +25,8 @@ function FloatingParticles() {
     const pos = ref.current.geometry.attributes.position;
     for (let i = 0; i < pos.count; i++) {
       let y = pos.getY(i);
-      y -= 0.025 + Math.random() * 0.02;
-      if (y < -2) y = 30 + Math.random() * 5;
+      y -= 0.02;
+      if (y < 0) y = 50; // reset to top
       pos.setY(i, y);
     }
     pos.needsUpdate = true;
@@ -37,30 +37,37 @@ function FloatingParticles() {
       <bufferGeometry>
         <bufferAttribute attach="attributes-position" array={positions} count={count} itemSize={3} />
       </bufferGeometry>
-      <pointsMaterial color="#fff" size={0.15} sizeAttenuation transparent opacity={0.6} />
+      <pointsMaterial color="#fff" size={0.15} sizeAttenuation transparent opacity={0.7} />
     </points>
   );
 }
 
-// 3D scene with drone camera
 function DroneScene() {
   const cameraRef = useRef();
   const logoRef = useRef();
 
   useEffect(() => {
-    cameraRef.current.position.set(0, 25, 35);
+    cameraRef.current.position.set(0, 40, 60);
     gsap.to(cameraRef.current.position, {
-      y: 2,
-      z: 8,
+      y: 10,
+      z: 15,
       duration: 4,
       ease: "power2.inOut",
       onUpdate: () => cameraRef.current.lookAt(0, 0, 0),
     });
 
+    // Logo drops from top
+    gsap.fromTo(
+      logoRef.current.position,
+      { y: 50 },
+      { y: 2, duration: 4, delay: 0.5, ease: "power2.inOut" }
+    );
+
+    // Optional bounce effect at landing
     gsap.fromTo(
       logoRef.current.scale,
-      { x: 0, y: 0, z: 0 },
-      { x: 1, y: 1, z: 1, duration: 1.5, delay: 3.8, ease: "elastic.out(1, 0.5)" }
+      { x: 0.5, y: 0.5, z: 0.5 },
+      { x: 1, y: 1, z: 1, duration: 1.5, delay: 4.5, ease: "elastic.out(1,0.5)" }
     );
   }, []);
 
@@ -68,22 +75,21 @@ function DroneScene() {
     <>
       <perspectiveCamera ref={cameraRef} fov={50} near={0.1} far={1000} />
       <ambientLight intensity={0.6} />
-      <directionalLight position={[5, 5, 5]} intensity={1} />
+      <directionalLight position={[5, 20, 5]} intensity={1} />
 
-      {/* Sky and particles */}
-      <Sky distance={450000} sunPosition={[0, 1, 0]} inclination={0} azimuth={0.25} />
-      <FloatingParticles />
+      {/* Space stars */}
+      <FloatingStars />
 
-      {/* Ground */}
+      {/* Ground plane */}
       <mesh rotation-x={-Math.PI / 2} position={[0, -1, 0]}>
         <planeGeometry args={[200, 200]} />
-        <meshStandardMaterial color="#f0f0f0" />
+        <meshStandardMaterial color="#0f9d58" />
       </mesh>
 
       {/* Logo */}
       <Text
         ref={logoRef}
-        position={[0, 0, 0]}
+        position={[0, 50, 0]} // start high, will animate down
         fontSize={4}
         color="#1f2937"
         anchorX="center"
@@ -100,28 +106,18 @@ export default function Welcome() {
   const features = ["Easy Attendance", "Track Students", "Teacher Insights", "Analyze Performance"];
 
   return (
-    <div className="relative w-full h-screen overflow-hidden">
-      {/* 3D Canvas full screen */}
+    <div className="relative w-full h-screen overflow-hidden bg-black">
       <Canvas className="absolute inset-0" shadows>
         <DroneScene />
       </Canvas>
 
-      {/* Overlay for headings, features, buttons */}
-      <div className="relative z-10 flex flex-col items-center justify-center h-screen px-6 text-center">
-        <motion.h2
-          className="text-4xl lg:text-5xl font-bold text-gray-100 leading-snug"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 4.2, duration: 1 }}
-        >
-          Effortless Attendance Management
-        </motion.h2>
-
+      {/* UI overlay */}
+      <div className="relative z-10 flex flex-col items-center justify-end h-screen pb-20 text-center">
         <motion.div
           className="flex flex-wrap justify-center gap-4 mt-6"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 4.5, duration: 1 }}
+          transition={{ delay: 5, duration: 1 }}
         >
           {features.map((feature, idx) => (
             <div
@@ -137,7 +133,7 @@ export default function Welcome() {
           className="mt-8 flex flex-col sm:flex-row gap-4 justify-center"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 4.8, duration: 1 }}
+          transition={{ delay: 5.3, duration: 1 }}
         >
           <button
             onClick={() => navigate("/auth")}
