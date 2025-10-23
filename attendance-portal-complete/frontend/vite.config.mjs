@@ -15,6 +15,9 @@ export default defineConfig({
     port: 5173,
     open: true, // automatically opens browser on npm run dev
   },
+  optimizeDeps: {
+    include: ['three', 'gsap'], // fix build issues on Vercel
+  },
   build: {
     outDir: 'dist',
     sourcemap: false,
