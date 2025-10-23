@@ -1,123 +1,81 @@
 import React, { useRef, useEffect, useMemo } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { Text } from "@react-three/drei";
+import { Text, Sky } from "@react-three/drei";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import * as THREE from "three";
 import { gsap } from "gsap";
+import * as THREE from "three";
 
 // Floating particle system
 function FloatingParticles() {
   const particlesRef = useRef();
-
   const count = 300;
   const positions = useMemo(() => {
     const arr = new Float32Array(count * 3);
     for (let i = 0; i < count; i++) {
-      arr[i * 3] = (Math.random() - 0.5) * 40; // x
-      arr[i * 3 + 1] = Math.random() * 20; // y
-      arr[i * 3 + 2] = (Math.random() - 0.5) * 40; // z
+      arr[i * 3] = (Math.random() - 0.5) * 40;
+      arr[i * 3 + 1] = Math.random() * 20;
+      arr[i * 3 + 2] = (Math.random() - 0.5) * 40;
     }
     return arr;
   }, [count]);
 
   useFrame(() => {
     if (!particlesRef.current) return;
-    const positions = particlesRef.current.geometry.attributes.position;
-    for (let i = 0; i < positions.count; i++) {
-      let y = positions.getY(i);
-      y -= 0.02; // fall speed
-      if (y < -2) y = 20; // reset particle when it hits the ground
-      positions.setY(i, y);
+    const pos = particlesRef.current.geometry.attributes.position;
+    for (let i = 0; i < pos.count; i++) {
+      let y = pos.getY(i);
+      y -= 0.02 + Math.random() * 0.02; // random fall speed
+      if (y < -2) y = 20 + Math.random() * 5;
+      pos.setY(i, y);
     }
-    positions.needsUpdate = true;
+    pos.needsUpdate = true;
   });
 
   return (
     <points ref={particlesRef}>
       <bufferGeometry>
-        <bufferAttribute
-          attach="attributes-position"
-          count={count}
-          array={positions}
-          itemSize={3}
-        />
+        <bufferAttribute attach="attributes-position" array={positions} count={count} itemSize={3} />
       </bufferGeometry>
-      <pointsMaterial
-        color="#ffffff"
-        size={0.15}
-        sizeAttenuation
-        transparent
-        opacity={0.6}
-      />
+      <pointsMaterial color="#ffffff" size={0.15} sizeAttenuation transparent opacity={0.6} />
     </points>
   );
 }
 
-// Sky background gradient
-function SkyBackground() {
-  const gradient = useMemo(() => {
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    const width = 32;
-    const height = 256;
-    canvas.width = width;
-    canvas.height = height;
-
-    const gradient = ctx.createLinearGradient(0, 0, 0, height);
-    gradient.addColorStop(0, "#87ceeb"); // sky blue
-    gradient.addColorStop(1, "#ffffff"); // horizon white
-
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, width, height);
-
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.magFilter = THREE.LinearFilter;
-    texture.minFilter = THREE.LinearMipMapLinearFilter;
-    return texture;
-  }, []);
-
-  return (
-    <mesh scale={[100, 100, 1]} position={[0, 20, -50]}>
-      <planeGeometry args={[100, 100]} />
-      <meshBasicMaterial map={gradient} side={THREE.BackSide} />
-    </mesh>
-  );
-}
-
-// Scene with camera fly-down
+// Drone scene with camera fly-in
 function DroneScene() {
   const cameraRef = useRef();
-  const lightRef = useRef();
+  const logoRef = useRef();
 
+  // Fly-in camera
   useEffect(() => {
     cameraRef.current.position.set(0, 20, 25);
-    cameraRef.current.lookAt(0, 0, 0);
-
     gsap.to(cameraRef.current.position, {
-      y: 2,
+      y: 3,
       z: 8,
       duration: 4,
       ease: "power2.inOut",
       onUpdate: () => cameraRef.current.lookAt(0, 0, 0),
     });
-  }, []);
 
-  useFrame(() => {
-    if (lightRef.current) {
-      lightRef.current.position.x = Math.sin(Date.now() * 0.001) * 5;
-      lightRef.current.position.z = Math.cos(Date.now() * 0.001) * 5;
-    }
-  });
+    // Logo pop
+    gsap.fromTo(
+      logoRef.current.scale,
+      { x: 0, y: 0, z: 0 },
+      { x: 1, y: 1, z: 1, duration: 1.5, delay: 3.8, ease: "elastic.out(1, 0.5)" }
+    );
+  }, []);
 
   return (
     <>
       <perspectiveCamera ref={cameraRef} fov={50} near={0.1} far={1000} />
       <ambientLight intensity={0.6} />
-      <directionalLight ref={lightRef} position={[5, 5, 5]} intensity={1} />
+      <directionalLight position={[5, 5, 5]} intensity={1} />
 
-      {/* Sky and particles */}
-      <SkyBackground />
+      {/* Sky */}
+      <Sky distance={450000} sunPosition={[0, 1, 0]} inclination={0} azimuth={0.25} />
+
+      {/* Particles */}
       <FloatingParticles />
 
       {/* Ground */}
@@ -126,8 +84,9 @@ function DroneScene() {
         <meshStandardMaterial color="#f0f0f0" />
       </mesh>
 
-      {/* Center text */}
+      {/* Center Logo */}
       <Text
+        ref={logoRef}
         position={[0, 0, 0]}
         fontSize={3}
         color="#1f2937"
@@ -151,7 +110,7 @@ export default function Welcome() {
 
   return (
     <div className="relative min-h-screen flex flex-col items-center justify-center px-6 overflow-hidden bg-white">
-      {/* Animated background gradient */}
+      {/* Animated gradient background */}
       <motion.div
         className="absolute inset-0 bg-gradient-to-r from-white via-gray-100 to-white"
         animate={{ backgroundPosition: ["0% 50%", "100% 50%"] }}
@@ -159,14 +118,14 @@ export default function Welcome() {
         style={{ backgroundSize: "200% 200%" }}
       />
 
-      {/* 3D scene */}
+      {/* 3D Scene */}
       <div className="relative z-10 w-full max-w-5xl h-72 mb-12">
         <Canvas shadows>
           <DroneScene />
         </Canvas>
       </div>
 
-      {/* Headings, features, buttons (appear after fly-in) */}
+      {/* Headings */}
       <motion.h2
         className="relative z-10 text-center text-3xl lg:text-4xl font-bold text-gray-700 leading-snug"
         initial={{ opacity: 0, y: -20 }}
@@ -176,6 +135,7 @@ export default function Welcome() {
         Effortless Attendance Management
       </motion.h2>
 
+      {/* Features */}
       <motion.div
         className="relative z-10 flex flex-wrap justify-center gap-4 mt-6"
         initial={{ opacity: 0, y: 20 }}
@@ -192,16 +152,17 @@ export default function Welcome() {
         ))}
       </motion.div>
 
+      {/* Description */}
       <motion.p
         className="relative z-10 text-center text-gray-600 text-lg lg:text-xl mt-6 max-w-2xl"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 4, duration: 1 }}
       >
-        Track, analyze, and optimize classroom workflow with a seamless experience
-        for both students and teachers.
+        Track, analyze, and optimize classroom workflow with a seamless experience for both students and teachers.
       </motion.p>
 
+      {/* CTA Buttons */}
       <motion.div
         className="relative z-10 mt-8 flex flex-col sm:flex-row gap-4 justify-center"
         initial={{ opacity: 0, y: 10 }}
