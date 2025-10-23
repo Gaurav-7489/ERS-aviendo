@@ -1,8 +1,42 @@
-import React from "react";
-import { Canvas } from "@react-three/fiber";
-import { Text } from "@react-three/drei";
+import React, { useRef } from "react";
+import { Canvas, useFrame } from "@react-three/fiber";
+import { Text, OrbitControls, Float } from "@react-three/drei";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+
+function InteractiveLogo() {
+  const textRef = useRef();
+
+  // Spin & float animation
+  useFrame(({ clock, mouse }) => {
+    if (textRef.current) {
+      // Rotate with mouse
+      textRef.current.rotation.y = mouse.x * 0.5;
+      textRef.current.rotation.x = mouse.y * 0.3;
+
+      // Float up and down
+      textRef.current.position.y = Math.sin(clock.getElapsedTime() * 1.5) * 0.3;
+    }
+  });
+
+  return (
+    <Float floatIntensity={0.6} rotationIntensity={0.5}>
+      <Text
+        ref={textRef}
+        fontSize={3}
+        color="#1f2937"
+        anchorX="center"
+        anchorY="middle"
+        bevelEnabled
+        bevelThickness={0.03}
+        bevelSize={0.02}
+        bevelSegments={5}
+      >
+        AVIENDO
+      </Text>
+    </Float>
+  );
+}
 
 export default function Welcome() {
   const navigate = useNavigate();
@@ -19,21 +53,13 @@ export default function Welcome() {
         style={{ backgroundSize: "200% 200%" }}
       />
 
-      {/* Static oversized 3D Logo */}
+      {/* 3D Logo */}
       <div className="relative z-10 w-full max-w-5xl h-64 mb-12">
         <Canvas camera={{ position: [0, 0, 12], fov: 50 }}>
           <ambientLight intensity={0.6} />
           <directionalLight position={[5, 5, 5]} intensity={1} />
-          
-          <Text
-            position={[0, 0, 0]}
-            fontSize={3}  // much bigger
-            color="#1f2937" // dark gray
-            anchorX="center"
-            anchorY="middle"
-          >
-            AVIENDO
-          </Text>
+          <InteractiveLogo />
+          <OrbitControls enablePan={false} enableZoom={false} />
         </Canvas>
       </div>
 
