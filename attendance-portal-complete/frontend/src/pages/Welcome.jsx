@@ -32,7 +32,7 @@ function InteractiveLogo() {
         bevelSize={0.02}
         bevelSegments={5}
       >
-        AVIENDO
+        BLUE
       </Text>
     </Float>
   );
