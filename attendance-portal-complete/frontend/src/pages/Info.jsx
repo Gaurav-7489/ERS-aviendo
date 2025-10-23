@@ -28,10 +28,10 @@ export default function Info() {
         transition={{ duration: 1 }}
       >
         <h1 className="text-5xl font-extrabold text-gray-900 leading-tight">
-          About <span className="text-gray-700">AVIENDO Attendance Portal</span>
+          About <span className="text-gray-700">BLUE Attendance Portal</span>
         </h1>
         <p className="text-lg text-gray-600">
-          AVIENDO Attendance Portal is a modern, easy-to-use solution for managing student attendance.
+          BLUE Attendance Portal is a modern, easy-to-use solution for managing student attendance.
           Students can mark attendance, view dashboards, and teachers can manage classrooms and exports efficiently.
         </p>
 

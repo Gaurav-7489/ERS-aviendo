@@ -32,7 +32,7 @@ export default function Welcome() {
             anchorX="center"
             anchorY="middle"
           >
-            AVIENDO
+            BLUE
           </Text>
         </Canvas>
       </div>
